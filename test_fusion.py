@@ -33,6 +33,10 @@ class TestfusionInputChangedHandler(adsk.core.InputChangedEventHandler):
             command = eventArgs.firingEvent.sender
             cmdInput = eventArgs.input
 
+            adsk.core.Application.get().activeViewport.camera = (
+                adsk.core.Application.get().activeViewport.camera
+            )
+
         except:
             if ui:
                 ui.messageBox(traceback.format_exc())

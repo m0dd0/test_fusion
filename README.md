@@ -1,2 +1,2 @@
-# test_fusion
-Different test cases for situations in which Fusions API does not work as exspected.
+# test_camer_triggers_fusion
+It appears that in some cases the input changed handler is triggered if we change the camera.
