@@ -19,9 +19,11 @@ def update_camera():
     )
 
 
-def event_action():
-    execution_queue.put(update_camera)
-    command.doExecute(False)
+class TestFusionCustomHandler(adsk.core.CustomEventHandler):
+    def notify(self, eventArgs: adsk.core.EventArgs):
+        print("started test_fusionCustomHandler")
+        execution_queue.put(update_camera)
+        command.doExecute(False)
 
 
 class TestfusionCreatedHandler(adsk.core.CommandCreatedEventHandler):
@@ -40,14 +42,12 @@ class TestfusionCreatedHandler(adsk.core.CommandCreatedEventHandler):
                 "testFusionIntegerSpinnerInputId", "spinner input", 1, 5, 1, 3
             )
 
-            # app = adsk.core.Application.get()
-            # event = app.registerCustomEvent("eventid123")
-            # custom_handler = TestFusionCustomHandler()
-            # handlers.append(custom_handler)
-            # event.add(custom_handler)
-            # global event_registered
-            # event_registered = True
-            faf.utils.execute_as_event(lambda: print("custom createed"))
+            app = adsk.core.Application.get()
+            event = app.registerCustomEvent("eventid123")
+            custom_handler = TestFusionCustomHandler()
+            handlers.append(custom_handler)
+            event.add(custom_handler)
+            # faf.utils.execute_as_event(lambda: print("custom createed"))
 
             global command
             command = eventArgs.command
@@ -61,7 +61,8 @@ class TestfusionInputChangedHandler(adsk.core.InputChangedEventHandler):
     def notify(self, eventArgs: adsk.core.InputChangedEventArgs):
         print("started TestfusionInputChangedHandler")
         try:
-            faf.utils.execute_as_event(event_action)
+            # faf.utils.execute_as_event(event_action)
+            adsk.core.Application.get().fireCustomEvent("eventid123")
         except:
             if ui:
                 ui.messageBox(traceback.format_exc())
@@ -108,8 +109,8 @@ def stop(context):  # pylint:disable=unused-argument
     try:
         ctrl.deleteMe()
         cmd.deleteMe()
-        # adsk.core.Application.get().unregisterCustomEvent("eventid123")
-        faf.stop()
+        adsk.core.Application.get().unregisterCustomEvent("eventid123")
+        # faf.stop()
     except:
         if ui:
             ui.messageBox("Failed:\n{}".format(traceback.format_exc()))
