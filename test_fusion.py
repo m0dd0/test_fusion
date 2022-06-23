@@ -19,10 +19,26 @@ def update_camera():
     )
 
 
+def create_cube(center, side_length: float) -> adsk.fusion.BRepBody:
+    adsk.core.Application.get().activeDocument.design.rootComponent.bRepBodies.add(
+        adsk.fusion.TemporaryBRepManager.get().createBox(
+            adsk.core.OrientedBoundingBox3D.create(
+                adsk.core.Point3D.create(*center),
+                adsk.core.Vector3D.create(1, 0, 0),
+                adsk.core.Vector3D.create(0, 1, 0),
+                side_length,
+                side_length,
+                side_length,
+            )
+        )
+    )
+
+
 class TestFusionCustomHandler(adsk.core.CustomEventHandler):
     def notify(self, eventArgs: adsk.core.EventArgs):
         print("started test_fusionCustomHandler")
-        execution_queue.put(update_camera)
+        execution_queue.put(lambda: create_cube((0, 0, 0), 1))
+        # execution_queue.put(update_camera)
         command.doExecute(False)
 
 
