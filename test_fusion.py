@@ -2,25 +2,26 @@ import adsk.core, adsk.fusion, traceback
 
 from .fusion_addin_framework import fusion_addin_framework as faf
 
+from queue import Queue
+
 handlers = []
 cmd = None
 ctrl = None
 ui = None
 
-event_registered = False
+command = None
+execution_queue = Queue()
 
 
-class TestFusionCustomHandler(adsk.core.CustomEventHandler):
-    def __init__(self):
-        super().__init__()
+def update_camera():
+    adsk.core.Application.get().activeViewport.camera = (
+        adsk.core.Application.get().activeViewport.camera
+    )
 
-    def notify(self, eventArgs: adsk.core.EventArgs):
-        print("started TestFusionCustomHandler")
-        try:
-            pass
-        except:
-            if ui:
-                ui.messageBox(traceback.format_exc())
+
+def event_action():
+    execution_queue.put(update_camera)
+    command.doExecute(False)
 
 
 class TestfusionCreatedHandler(adsk.core.CommandCreatedEventHandler):
@@ -46,6 +47,7 @@ class TestfusionCreatedHandler(adsk.core.CommandCreatedEventHandler):
             # event.add(custom_handler)
             # global event_registered
             # event_registered = True
+            faf.utils.execute_as_event(lambda: print("custom createed"))
 
             global command
             command = eventArgs.command
@@ -59,19 +61,7 @@ class TestfusionInputChangedHandler(adsk.core.InputChangedEventHandler):
     def notify(self, eventArgs: adsk.core.InputChangedEventArgs):
         print("started TestfusionInputChangedHandler")
         try:
-            # faf.utils.execute_as_event(lambda: print("custom"))
-
-            global event_registered
-            if not event_registered:
-                custom_event = adsk.core.Application.get().registerCustomEvent(
-                    "eventid123"
-                )
-                custom_handler = TestFusionCustomHandler()
-                custom_event.add(custom_handler)
-                event_registered = True
-
-            adsk.core.Application.get().fireCustomEvent("eventid123")
-
+            faf.utils.execute_as_event(event_action)
         except:
             if ui:
                 ui.messageBox(traceback.format_exc())
@@ -81,7 +71,8 @@ class TestfusionExecuteHandler(adsk.core.CommandEventHandler):
     def notify(self, eventArgs: adsk.core.CommandEventArgs):
         print("started TestfusionExecuteHandler")
         try:
-            pass
+            while not execution_queue.empty():
+                execution_queue.get()()
         except:
             if ui:
                 ui.messageBox(traceback.format_exc())
@@ -117,8 +108,8 @@ def stop(context):  # pylint:disable=unused-argument
     try:
         ctrl.deleteMe()
         cmd.deleteMe()
-        adsk.core.Application.get().unregisterCustomEvent("eventid123")
-        # faf.stop()
+        # adsk.core.Application.get().unregisterCustomEvent("eventid123")
+        faf.stop()
     except:
         if ui:
             ui.messageBox("Failed:\n{}".format(traceback.format_exc()))
